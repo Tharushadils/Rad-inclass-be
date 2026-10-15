@@ -1,8 +1,10 @@
 import { Request, Response } from "express"
 import { UserModel, UserRole } from "../models/user.model"
 import bcrypt from "bcryptjs"
+import jwt from "jsonwebtoken"
 import { signAccessToken, signRefershToken } from "../util/jwt"
 import { AuthRequest } from "../midlewares/auth"
+import "dotenv/config"
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -87,6 +89,49 @@ export const login = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       message: "Login failed..!"
+    })
+  }
+}
+
+
+
+
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { refresh_token } = req.body
+
+    if (!refresh_token) {
+      return res.status(401).json({
+        message: "Refresh token is required..!"
+      })
+    }
+
+    const payload = jwt.verify(
+      refresh_token,
+      process.env.JWT_REFRESH_SECRET as string
+    ) as { sub: string }
+
+    const user = await UserModel.findById(payload.sub)
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found..!"
+      })
+    }
+
+    const accessToken = signAccessToken(user)
+
+    return res.status(200).json({
+      message: "Access token refreshed successfully..!",
+      access_token: accessToken
+    })
+
+  } catch (err) {
+    return res.status(401).json({
+      message: "Invalid or expired refresh token..!"
     })
   }
 }
