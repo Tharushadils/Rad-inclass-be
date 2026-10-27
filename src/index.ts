@@ -5,6 +5,9 @@ import articleRouter from "./routes/article.routers"
 import mongoose from "mongoose"
 import cors from "cors"
 
+import dns, { setServers } from "node:dns"
+dns. setServers(["8.8.8.8"])
+
 const PORT = process.env.PORT 
 const URL = process.env.MONGO_LOCAL_URL || ""
 

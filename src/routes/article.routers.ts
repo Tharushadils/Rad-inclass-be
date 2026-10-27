@@ -1,48 +1,60 @@
-import { Router } from "express"
+import { Router, Request, Response, NextFunction } from "express"
 import {
   createArticle,
   deleteArticle,
   getAllArticles,
-  getArticleById
+  getArticleById,
+  getGenarateDescription
 } from "../controllers/article.controller"
 import { upload } from "../midlewares/upload"
 import { optionalAuthenticate } from "../midlewares/auth"
 
 const router = Router()
 
-// Middleware that accepts "image" or "file" field name
-const uploadMiddleware = (req: any, res: any, next: any) => {
+const uploadMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "file", maxCount: 1 }
-  ])(req, res, (err: any) => {
+  ])(req, res, (err) => {
     if (err) {
       return res.status(400).json({
-        message: err.message || "File upload error..!"
+        message: err.message || "File upload error!"
       })
     }
-    if (req.files) {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-      req.file = files["image"]?.[0] || files["file"]?.[0]
-    }
+
+    const files = req.files as
+      | { [fieldname: string]: Express.Multer.File[] }
+      | undefined
+
+    req.file = files?.["image"]?.[0] || files?.["file"]?.[0]
+
     next()
   })
 }
 
-// POST /api/v1/article/create
-router.post("/create", optionalAuthenticate, uploadMiddleware, createArticle)
+router.post(
+  "/create",
+  optionalAuthenticate,
+  uploadMiddleware,
+  createArticle
+)
 
-// POST /api/v1/article (fallback)
-router.post("/", optionalAuthenticate, uploadMiddleware, createArticle)
+router.post(
+  "/",
+  optionalAuthenticate,
+  uploadMiddleware,
+  createArticle
+)
 
-// GET /api/v1/article & /api/v1/article/all
-router.get("/all", getAllArticles)
+router.post("/ai", getGenarateDescription)
+
 router.get("/", getAllArticles)
-
-// GET /api/v1/article/:id
+router.get("/all", getAllArticles)
 router.get("/:id", getArticleById)
-
-// DELETE /api/v1/article/:id
 router.delete("/:id", deleteArticle)
 
 export default router
